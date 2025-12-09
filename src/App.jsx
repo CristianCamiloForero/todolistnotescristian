@@ -6,33 +6,32 @@ import FilterButtons from './components/FilterButtons';
 import ConfirmModal from './components/ConfirmModal';
 
 function App() {
-  const [notas, setNotas] = useState([
-    {
-      id: 1,
-      titulo: "Revisar documentos",
-      contenido: "Revisar y aprobar los documentos del proyecto antes del viernes",
-      fecha: new Date().toISOString(),
-      estado: false
-    },
-    {
-      id: 2,
-      titulo: "Reunión de equipo",
-      contenido: "Preparar agenda para la reunión semanal del equipo",
-      fecha: new Date().toISOString(),
-      estado: true
-    },
-    {
-      id: 3,
-      titulo: "Actualizar base de datos",
-      contenido: "Migrar datos antiguos al nuevo sistema",
-      fecha: new Date().toISOString(),
-      estado: false
-    }
-  ]);
+  const [notas, setNotas] = useState([]);
   const [filtro, setFiltro] = useState('todas');
   const [mostrarForm, setMostrarForm] = useState(false);
   const [notaEditando, setNotaEditando] = useState(null);
   const [modalEliminar, setModalEliminar] = useState({ isOpen: false, notaId: null });
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Cargar notas al iniciar
+  useEffect(() => {
+    cargarNotas();
+  }, []);
+
+  const cargarNotas = async () => {
+    try {
+      setCargando(true);
+      setError(null);
+      const notasData = await notasAPI.listarNotas();
+      setNotas(notasData);
+    } catch (err) {
+      setError('Error al cargar las notas. Por favor, intenta de nuevo.');
+      console.error(err);
+    } finally {
+      setCargando(false);
+    }
+  };
 
   const notasFiltradas = notas.filter(nota => {
     if (filtro === 'todas') return true;
@@ -41,34 +40,56 @@ function App() {
     return true;
   });
 
-  const handleCrearNota = (notaData) => {
-    const nuevaNota = {
-      ...notaData,
-      id: Math.max(0, ...notas.map(n => n.id)) + 1,
-    };
-    setNotas([...notas, nuevaNota]);
-    setMostrarForm(false);
+  const handleCrearNota = async (notaData) => {
+    try {
+      const nuevaNota = await notasAPI.crearNota(notaData);
+      setNotas([...notas, nuevaNota]);
+      setMostrarForm(false);
+    } catch (err) {
+      alert('Error al crear la nota');
+      console.error(err);
+    }
   };
 
-  const handleActualizarNota = (id, notaData) => {
-    setNotas(notas.map(n => n.id === id ? { ...notaData, id } : n));
-    setNotaEditando(null);
-    setMostrarForm(false);
+  const handleActualizarNota = async (id, notaData) => {
+    try {
+      const notaActualizada = await notasAPI.actualizarNota(id, notaData);
+      setNotas(notas.map(n => n.id === id ? notaActualizada : n));
+      setNotaEditando(null);
+      setMostrarForm(false);
+    } catch (err) {
+      alert('Error al actualizar la nota');
+      console.error(err);
+    }
   };
 
   const handleEliminarNota = (id) => {
     setModalEliminar({ isOpen: true, notaId: id });
   };
 
-  const confirmarEliminar = () => {
-    setNotas(notas.filter(n => n.id !== modalEliminar.notaId));
-    setModalEliminar({ isOpen: false, notaId: null });
+  const confirmarEliminar = async () => {
+    try {
+      await notasAPI.eliminarNota(modalEliminar.notaId);
+      setNotas(notas.filter(n => n.id !== modalEliminar.notaId));
+      setModalEliminar({ isOpen: false, notaId: null });
+    } catch (err) {
+      alert('Error al eliminar la nota');
+      console.error(err);
+      setModalEliminar({ isOpen: false, notaId: null });
+    }
   };
 
-  const handleToggleEstado = (nota) => {
-    setNotas(notas.map(n => 
-      n.id === nota.id ? { ...n, estado: !n.estado } : n
-    ));
+  const handleToggleEstado = async (nota) => {
+    try {
+      const notaActualizada = await notasAPI.actualizarNota(nota.id, {
+        ...nota,
+        estado: !nota.estado
+      });
+      setNotas(notas.map(n => n.id === nota.id ? notaActualizada : n));
+    } catch (err) {
+      alert('Error al actualizar el estado');
+      console.error(err);
+    }
   };
 
   const handleEditar = (nota) => {
@@ -84,6 +105,38 @@ function App() {
   const totalNotas = notas.length;
   const completadas = notas.filter(n => n.estado).length;
   const pendientes = totalNotas - completadas;
+
+  if (cargando) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mb-4"></div>
+          <p className="text-gray-600">Cargando notas...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <p className="text-gray-900 font-semibold mb-2">{error}</p>
+          <button
+            onClick={cargarNotas}
+            className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -146,7 +199,7 @@ function App() {
             <div className="w-full bg-slate-700 rounded-full h-2">
               <div 
                 className="bg-teal-500 h-2 rounded-full transition-all"
-                style={{ width: `${(completadas / totalNotas) * 100}%` }}
+                style={{ width: `${totalNotas > 0 ? (completadas / totalNotas) * 100 : 0}%` }}
               />
             </div>
           </div>
