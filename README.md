@@ -203,7 +203,6 @@ npm run build
 Vite realiza:
 1. Tree-shaking de código no usado
 2. Minificación de JS y CSS
-3. Optimización de imágenes
 4. Code splitting automático
 5. Genera archivos en carpeta `dist/`
 
@@ -281,9 +280,8 @@ npm run lint       # (Si está configurado) Ejecuta linter
 ### Consideraciones
 
 - No se almacenan tokens en localStorage
-- No hay autenticación implementada (agregar si es necesario)
+- No hay autenticación implementada
 - Todas las peticiones son HTTPS en producción
-- Variables sensibles nunca en el código
 
 ## Rendimiento
 
@@ -298,7 +296,6 @@ npm run lint       # (Si está configurado) Ejecuta linter
 - Componentes funcionales (más ligeros)
 - Memoización donde es necesario
 - Lazy loading de rutas (si se implementa)
-- Imágenes optimizadas
 - CSS purgado automáticamente
 
 ## Testing (Para Implementar)
@@ -333,17 +330,6 @@ npm install -D @playwright/test
 - Vercel Analytics (automático)
 - Logs en Vercel Dashboard
 - Error tracking (Sentry si se agrega)
-
-## Escalabilidad
-
-### Preparado Para
-
-- Agregar más páginas con React Router
-- Implementar autenticación (Auth0, Firebase)
-- State management global (Context API o Zustand)
-- Internacionalización (i18next)
-- Testing automatizado
-- CI/CD con GitHub Actions
 
 ## Mantenimiento
 
@@ -388,9 +374,3 @@ No soporta:
 - Tailwind CSS: tailwindcss.com
 - Vercel: vercel.com/docs
 - FastAPI: fastapi.tiangolo.com
-
-### Comunidad
-
-- Stack Overflow para preguntas
-- GitHub Issues para reportar bugs
-- Discord de React para ayuda en tiempo real
